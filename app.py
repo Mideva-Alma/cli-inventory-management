@@ -1,4 +1,5 @@
 from flask import Flask, request
+import requests
 
 app = Flask(__name__)
 
@@ -28,6 +29,32 @@ inventory = [
         "barcode": "0123456789014"
     }
 ]
+
+def fetch_product_from_api(barcode):
+    url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+
+    headers = {
+        "User-Agent": "InventoryManagementSystem/1.0"
+    }
+
+    response = requests.get(url, headers=headers, timeout=10)
+
+    if response.status_code != 200:
+        return None
+
+    data = response.json()
+
+    if data.get("status") != 1:
+        return None
+
+    product = data.get("product", {})
+
+    return {
+        "product_name": product.get("product_name"),
+        "brand": product.get("brands"),
+        "ingredients_text": product.get("ingredients_text"),
+        "barcode": barcode
+    }
 
 @app.route("/")
 def home():
@@ -98,7 +125,35 @@ def delete_inventory_item(item_id):
 
     return {"error": "Inventory item not found"}, 404
 
+@app.route("/products/<barcode>", methods=["GET"])
+def find_product(barcode):
+    product = fetch_product_from_api(barcode)
 
+    if product is None:
+        return {"error": "Product not found"}, 404
+
+    return product
+
+@app.route("/inventory/from-api/<barcode>", methods=["POST"])
+def add_product_from_api(barcode):
+    product = fetch_product_from_api(barcode)
+
+    if product is None:
+        return {"error": "Product not found in OpenFoodFacts"}, 404
+
+    new_item = {
+        "id": len(inventory) + 1,
+        "product_name": product["product_name"],
+        "brand": product["brand"],
+        "price": 0.0,
+        "stock": 0,
+        "barcode": product["barcode"],
+        "ingredients_text": product["ingredients_text"]
+    }
+
+    inventory.append(new_item)
+
+    return new_item, 201
 
 if __name__ == "__main__":
     app.run(debug=True)
