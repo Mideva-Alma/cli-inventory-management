@@ -1,0 +1,75 @@
+# Inventory Management System
+
+A Python REST API and CLI tool for managing retail inventory, with integration to the OpenFoodFacts API for fetching real product data by barcode.
+
+## Features
+
+- Flask REST API with full CRUD operations (Create, Read, Update, Delete) for inventory items
+- Integration with the OpenFoodFacts API to fetch real product details by barcode
+- CLI tool to interact with the API (view, add, update, delete inventory, and look up products)
+- Input validation and error handling on both the CLI and API layers
+- Automated test suite using pytest, including mocked tests for external API calls
+
+## Tech Stack
+
+- Python 3
+- Flask
+- Requests
+- Pytest
+- unittest.mock
+
+## Installation and Setup
+
+1. Clone the repository:
+```bash
+   git clone https://github.com/Mideva-Alma/cli-inventory-management.git
+   cd cli-inventory-management
+```
+
+2. Create and activate a virtual environment:
+```bash
+   python3 -m venv venv
+   source venv/bin/activate
+```
+
+3. Install dependencies:
+```bash
+   pip install -r requirements.txt
+```
+
+## Running the Application
+
+1. Start the Flask API server (in one terminal):
+```bash
+   python app.py
+```
+   The server runs at `http://127.0.0.1:5000`.
+
+2. In a separate terminal, run the CLI:
+```bash
+   python cli.py
+```
+
+## API Endpoints
+
+| Method | Endpoint                          | Description                                  |
+|--------|------------------------------------|-----------------------------------------------|
+| GET    | `/inventory`                       | Fetch all inventory items                     |
+| GET    | `/inventory/<id>`                  | Fetch a single inventory item by ID           |
+| POST   | `/inventory`                       | Add a new inventory item                      |
+| PATCH  | `/inventory/<id>`                  | Update an existing inventory item             |
+| DELETE | `/inventory/<id>`                  | Delete an inventory item                      |
+| GET    | `/products/<barcode>`              | Fetch product details from OpenFoodFacts      |
+| POST   | `/inventory/from-api/<barcode>`    | Fetch a product from OpenFoodFacts and add it to inventory |
+
+### Example: Add an item
+
+```bash
+curl -X POST http://127.0.0.1:5000/inventory \
+  -H "Content-Type: application/json" \
+  -d '{"product_name": "Test Item", "brand": "Test", "price": 5, "stock": 10, "barcode": "999"}'
+```
+
+## CLI Usage
+
+Run `python cli.py` to launch the interactive menu:
