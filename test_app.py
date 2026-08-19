@@ -1,6 +1,6 @@
 import pytest
 from app import app, inventory
-
+from unittest.mock import patch
 
 @pytest.fixture
 def client():
@@ -101,6 +101,63 @@ def test_delete_inventory_item_valid(client):
 
 def test_delete_inventory_item_not_found(client):
     response = client.delete("/inventory/999")
+
+    assert response.status_code == 404
+    data = response.get_json()
+    assert "error" in data
+
+@patch("app.fetch_product_from_api")
+def test_find_product_success(mock_fetch, client):
+    mock_fetch.return_value = {
+        "product_name": "Mock Cereal",
+        "brand": "MockBrand",
+        "ingredients_text": "Oats, sugar, salt",
+        "barcode": "1234567890123"
+    }
+
+    response = client.get("/products/1234567890123")
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["product_name"] == "Mock Cereal"
+    mock_fetch.assert_called_once_with("1234567890123")
+
+@patch("app.fetch_product_from_api")
+def test_find_product_not_found(mock_fetch, client):
+    mock_fetch.return_value = None
+
+    response = client.get("/products/0000000000000")
+
+    assert response.status_code == 404
+    data = response.get_json()
+    assert "error" in data
+
+@patch("app.fetch_product_from_api")
+def test_add_product_from_api_success(mock_fetch, client):
+    mock_fetch.return_value = {
+        "product_name": "Mock Cereal",
+        "brand": "MockBrand",
+        "ingredients_text": "Oats, sugar, salt",
+        "barcode": "1234567890123"
+    }
+
+    response = client.post("/inventory/from-api/1234567890123")
+
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["product_name"] == "Mock Cereal"
+    assert data["price"] == 0.0
+    assert data["stock"] == 0
+    assert data["id"] == 4
+
+    check = client.get("/inventory/4")
+    assert check.status_code == 200
+
+@patch("app.fetch_product_from_api")
+def test_add_product_from_api_not_found(mock_fetch, client):
+    mock_fetch.return_value = None
+
+    response = client.post("/inventory/from-api/0000000000000")
 
     assert response.status_code == 404
     data = response.get_json()
