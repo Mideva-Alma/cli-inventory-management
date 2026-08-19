@@ -78,6 +78,15 @@ def get_inventory_item(item_id):
 def add_inventory_item():
     data = request.get_json()
 
+    if not data:
+        return {"error": "No data provided"}, 400
+
+    required_fields = ["product_name", "brand", "price", "stock", "barcode"]
+    missing = [field for field in required_fields if not data.get(field) and data.get(field) != 0]
+
+    if missing:
+        return {"error": f"Missing or empty fields: {', '.join(missing)}"}, 400
+
     new_item = {
         "id": len(inventory) + 1,
         "product_name": data["product_name"],
@@ -86,9 +95,7 @@ def add_inventory_item():
         "stock": data["stock"],
         "barcode": data["barcode"]
     }
-
     inventory.append(new_item)
-
     return new_item, 201
 
 @app.route("/inventory/<int:item_id>", methods=["PATCH"])
