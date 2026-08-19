@@ -1,10 +1,23 @@
+from urllib import response
 import requests
 
 BASE_URL = "http://127.0.0.1:5000"
 
+def safe_request(method, url, **kwargs):
+    try:
+        return requests.request(method, url, **kwargs)
+    except requests.exceptions.ConnectionError:
+        print("\nCould not connect to the server. Is app.py running?")
+        return None
+    except requests.exceptions.Timeout:
+        print("\nRequest timed out. Please try again.")
+        return None
+
 
 def view_inventory():
-    response = requests.get(f"{BASE_URL}/inventory")
+    response = safe_request("GET", f"{BASE_URL}/inventory")
+    if response is None:
+        return
 
     if response.status_code == 200:
         items = response.json()
@@ -27,7 +40,10 @@ def view_inventory():
 def view_item():
     item_id = input("Enter inventory ID: ")
 
-    response = requests.get(f"{BASE_URL}/inventory/{item_id}")
+    response = safe_request("GET", f"{BASE_URL}/inventory/{item_id}")
+
+    if response is None:
+        return
 
     if response.status_code == 200:
         item = response.json()
@@ -41,12 +57,29 @@ def view_item():
     else:
         print("Inventory item not found.")
 
+def get_float(prompt):
+    while True:
+        value = input(prompt)
+        try:
+            return float(value)
+        except ValueError:
+            print("Please enter a valid number.")
+
+
+def get_int(prompt):
+    while True:
+        value = input(prompt)
+        try:
+            return int(value)
+        except ValueError:
+            print("Please enter a valid whole number.")
+
 
 def add_item():
     product_name = input("Product name: ")
     brand = input("Brand: ")
-    price = float(input("Price: "))
-    stock = int(input("Stock: "))
+    price = get_float("Price: ")
+    stock = get_int("Stock: ")
     barcode = input("Barcode: ")
 
     item = {
@@ -57,10 +90,10 @@ def add_item():
         "barcode": barcode
     }
 
-    response = requests.post(
-        f"{BASE_URL}/inventory",
-        json=item
-    )
+    response = safe_request("POST", f"{BASE_URL}/inventory", json=item)
+
+    if response is None:
+        return
 
     if response.status_code == 201:
         print("\nItem added successfully!")
@@ -79,21 +112,21 @@ def update_item():
     choice = input("Choose an option: ")
 
     if choice == "1":
-        price = float(input("Enter new price: "))
+        price = get_float("Enter new price: ")
         data = {"price": price}
 
     elif choice == "2":
-        stock = int(input("Enter new stock level: "))
+        stock = get_int("Enter new stock level: ")
         data = {"stock": stock}
 
     else:
         print("Invalid option.")
         return
 
-    response = requests.patch(
-        f"{BASE_URL}/inventory/{item_id}",
-        json=data
-    )
+    response = safe_request("PATCH", f"{BASE_URL}/inventory/{item_id}", json=data)
+
+    if response is None:
+        return
 
     if response.status_code == 200:
         print("\nItem updated successfully!")
@@ -105,9 +138,10 @@ def update_item():
 def delete_item():
     item_id = input("Enter inventory ID: ")
 
-    response = requests.delete(
-        f"{BASE_URL}/inventory/{item_id}"
-    )
+    response = safe_request("DELETE", f"{BASE_URL}/inventory/{item_id}")
+
+    if response is None:
+        return
 
     if response.status_code == 200:
         print(response.json()["message"])
@@ -118,9 +152,10 @@ def delete_item():
 def find_product():
     barcode = input("Enter product barcode: ")
 
-    response = requests.get(
-        f"{BASE_URL}/products/{barcode}"
-    )
+    response = safe_request("GET", f"{BASE_URL}/products/{barcode}")
+
+    if response is None:
+        return
 
     if response.status_code == 200:
         product = response.json()
